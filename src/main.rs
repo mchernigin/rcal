@@ -1,12 +1,13 @@
 use chrono::{self, Datelike, DateTime, Local};
+use colored::Colorize;
 
 fn main() {
     let now = chrono::Local::now();
 
-    print_month(now);
+    print_month(now, now);
 }
 
-fn print_month(date: DateTime<Local>) -> () {
+fn print_month(date: DateTime<Local>, now: DateTime<Local>) -> () {
     let months = [
         "January",
         "February",
@@ -21,9 +22,9 @@ fn print_month(date: DateTime<Local>) -> () {
         "November",
         "December",
     ];
-    let month = months[date.month0() as usize];
-    let year = date.year();
-    let month_and_year = format!("{} {}", month, year);
+    let cur_month = months[date.month0() as usize];
+    let cur_year = date.year();
+    let month_and_year = format!("{} {}", cur_month, cur_year);
     println!("{:^20}", month_and_year);
 
     for day in ["Mo ", "Tu ", "We ", "Th ", "Fr ", "Sa ", "Su"] {
@@ -33,15 +34,16 @@ fn print_month(date: DateTime<Local>) -> () {
 
     let shift = date.with_day(1).unwrap().weekday() as u32;
     let days_in_month = days_in_month(date.month0(), date.year() as u32);
-    for _ in 0..shift {
-        print!("   ");
-    }
+    print!("{:<1$}", "", (shift * 3) as usize);
     for day in 1..(days_in_month + 1) {
         let i =  (day + shift) % 7;
-        print!("{day:>2} ");
-        if i % 7 == 0 {
-            println!();
+        let cell = format!("{day:>2}");
+        if date.with_day(day).unwrap() == now {
+            print!("{}", cell.reversed());
+        } else {
+            print!("{}", cell);
         }
+        print!("{}", if i % 7 == 0 { "\n" } else { " " });
     }
     println!()
 }
