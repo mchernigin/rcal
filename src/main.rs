@@ -27,9 +27,9 @@ struct Args {
 fn main() {
     let now = chrono::Local::now().date();
     let mut date = now.with_day(1).unwrap();
-    let args = Args::parse();
     let month_width = 22;
 
+    let args = Args::parse();
     match args.month {
         Some(m) =>
             match date.with_day(1).unwrap().with_month(m) {
@@ -45,47 +45,49 @@ fn main() {
     if args.full_year {
         print_full_year(date, now, &args, month_width);
     } else if args.three_months {
-        print_three_months(date, now, &args, month_width);
+        print_3months(date, now, &args, month_width);
     } else {
         print_month(date, now, &args, 0);
     }
 }
 
 fn print_full_year(date: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
-    print_three_months(date.with_month(2).unwrap(), now, &cfg, w); println!();
-    print_three_months(date.with_month(5).unwrap(), now, &cfg, w); println!();
-    print_three_months(date.with_month(8).unwrap(), now, &cfg, w); println!();
-    print_three_months(date.with_month(11).unwrap(), now, &cfg, w);
+    for i in (2..12).step_by(3) {
+        print_3months(date.with_month(i).unwrap(), now, &cfg, w);
+        if i != 11 {
+            println!();
+        }
+    }
 }
 
-fn print_three_months(date: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
-    let cur_month = date.month();
+fn print_3months(cur_month: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
+    let m = cur_month.month();
 
-    let prev_month = if cur_month == 1 {
-        date.with_month(12).unwrap()
-            .with_year(date.year() - 1)
+    let prev_month = if m == 1 {
+        cur_month.with_month(12).unwrap()
+            .with_year(cur_month.year() - 1)
     } else {
-        date.with_month(date.month() - 1)
+        cur_month.with_month(cur_month.month() - 1)
     }.unwrap();
 
-    let next_month = if cur_month == 12 {
-        date.with_month(1).unwrap().with_year(date.year() + 1)
+    let next_month = if m == 12 {
+        cur_month.with_month(1).unwrap().with_year(cur_month.year() + 1)
     } else {
-        date.with_month(date.month() + 1)
+        cur_month.with_month(cur_month.month() + 1)
     }.unwrap();
 
     let mut shift = 0;
-    print_month(prev_month, now, &cfg, shift);
-    execute!(stdout(), cursor::MoveUp(month_height(prev_month))).unwrap();
-    shift += w;
-    print_month(date, now, &cfg, shift);
-    execute!(stdout(), cursor::MoveUp(month_height(date))).unwrap();
-    shift += w;
-    print_month(next_month, now, &cfg, shift);
+    for month in [prev_month, cur_month, next_month] {
+        print_month(month, now, &cfg, shift);
+        if month != next_month {
+            execute!(stdout(), cursor::MoveUp(month_height(month))).unwrap();
+            shift += w;
+        }
+    }
 
     // Place cursor after longest month
     let max_h = std::cmp::max(month_height(prev_month),
-                                std::cmp::max(month_height(date),
+                              std::cmp::max(month_height(cur_month),
                                             month_height(next_month)));
     let dy = max_h - month_height(next_month);
     execute!(stdout(), cursor::MoveDown(dy)).unwrap();
