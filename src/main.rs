@@ -16,6 +16,10 @@ struct Args {
     #[clap(short = '3')]
     three_months: bool,
 
+    /// Show full year
+    #[clap(short, long)]
+    full_year: bool,
+
     /// Show specific month of current year
     #[clap(short, long)]
     month: Option<u32>,
@@ -39,40 +43,53 @@ fn main() {
         None => (),
     }
     
-    if args.three_months {
-        let cur_month = date.month();
-
-        let prev_month = if cur_month == 1 {
-            date.with_month(12).unwrap()
-                .with_year(date.year() - 1)
-        } else {
-            date.with_month(date.month() - 1)
-        }.unwrap();
-
-        let next_month = if cur_month == 12 {
-           date.with_month(1).unwrap().with_year(date.year() + 1)
-        } else {
-           date.with_month(date.month() + 1)
-        }.unwrap();
-
-        let mut shift = 0;
-        print_month(prev_month, now, &args, shift);
-        execute!(stdout(), cursor::MoveUp(month_height(prev_month))).unwrap();
-        shift += month_width;
-        print_month(date, now, &args, shift);
-        execute!(stdout(), cursor::MoveUp(month_height(date))).unwrap();
-        shift += month_width;
-        print_month(next_month, now, &args, shift);
-
-        // Place cursor after longest month
-        let max_h = std::cmp::max(month_height(prev_month),
-                                  std::cmp::max(month_height(date),
-                                                month_height(next_month)));
-        let dy = max_h - month_height(next_month);
-        execute!(stdout(), cursor::MoveDown(dy)).unwrap();
+    if args.full_year {
+        print_full_year(date, now, &args, month_width);
+    } else if args.three_months {
+        print_three_months(date, now, &args, month_width);
     } else {
         print_month(date, now, &args, 0);
     }
+}
+
+fn print_full_year(date: DateTime<Local>, now: DateTime<Local>, cfg: &Args, w: u16) {
+    print_three_months(date.with_month(2).unwrap(), now, &cfg, w); println!();
+    print_three_months(date.with_month(5).unwrap(), now, &cfg, w); println!();
+    print_three_months(date.with_month(8).unwrap(), now, &cfg, w); println!();
+    print_three_months(date.with_month(11).unwrap(), now, &cfg, w);
+}
+
+fn print_three_months(date: DateTime<Local>, now: DateTime<Local>, cfg: &Args, w: u16) {
+    let cur_month = date.month();
+
+    let prev_month = if cur_month == 1 {
+        date.with_month(12).unwrap()
+            .with_year(date.year() - 1)
+    } else {
+        date.with_month(date.month() - 1)
+    }.unwrap();
+
+    let next_month = if cur_month == 12 {
+        date.with_month(1).unwrap().with_year(date.year() + 1)
+    } else {
+        date.with_month(date.month() + 1)
+    }.unwrap();
+
+    let mut shift = 0;
+    print_month(prev_month, now, &cfg, shift);
+    execute!(stdout(), cursor::MoveUp(month_height(prev_month))).unwrap();
+    shift += w;
+    print_month(date, now, &cfg, shift);
+    execute!(stdout(), cursor::MoveUp(month_height(date))).unwrap();
+    shift += w;
+    print_month(next_month, now, &cfg, shift);
+
+    // Place cursor after longest month
+    let max_h = std::cmp::max(month_height(prev_month),
+                                std::cmp::max(month_height(date),
+                                            month_height(next_month)));
+    let dy = max_h - month_height(next_month);
+    execute!(stdout(), cursor::MoveDown(dy)).unwrap();
 }
 
 fn print_month(date: DateTime<Local>, now: DateTime<Local>, cfg: &Args, x: u16) {
@@ -124,7 +141,9 @@ fn print_month(date: DateTime<Local>, now: DateTime<Local>, cfg: &Args, x: u16) 
         }
 
         if i % 7 == 0 {
-            println!();
+            if day != days_in_month {
+                println!();
+            }
             execute!(stdout(), cursor::MoveRight(x)).unwrap();
             week_number = (week_number + 1) % 52;
             if cfg.week_number {
