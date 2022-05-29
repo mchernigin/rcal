@@ -1,7 +1,7 @@
 use std;
 use std::io::stdout;
 use clap::Parser;
-use chrono::{self, Datelike, DateTime, Local};
+use chrono::{self, Datelike, Date, Local};
 use crossterm::{cursor, execute, style::Attribute};
 
 /// Simple calendar
@@ -25,7 +25,7 @@ struct Args {
 }
 
 fn main() {
-    let now = chrono::Local::now();
+    let now = chrono::Local::now().date();
     let mut date = now.with_day(1).unwrap();
     let args = Args::parse();
     let month_width = 22;
@@ -51,14 +51,14 @@ fn main() {
     }
 }
 
-fn print_full_year(date: DateTime<Local>, now: DateTime<Local>, cfg: &Args, w: u16) {
+fn print_full_year(date: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
     print_three_months(date.with_month(2).unwrap(), now, &cfg, w); println!();
     print_three_months(date.with_month(5).unwrap(), now, &cfg, w); println!();
     print_three_months(date.with_month(8).unwrap(), now, &cfg, w); println!();
     print_three_months(date.with_month(11).unwrap(), now, &cfg, w);
 }
 
-fn print_three_months(date: DateTime<Local>, now: DateTime<Local>, cfg: &Args, w: u16) {
+fn print_three_months(date: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
     let cur_month = date.month();
 
     let prev_month = if cur_month == 1 {
@@ -91,7 +91,7 @@ fn print_three_months(date: DateTime<Local>, now: DateTime<Local>, cfg: &Args, w
     execute!(stdout(), cursor::MoveDown(dy)).unwrap();
 }
 
-fn print_month(date: DateTime<Local>, now: DateTime<Local>, cfg: &Args, x: u16) {
+fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
     let week_col_size = if cfg.week_number { 4 } else { 0 };
     let months = [
         "January",
@@ -175,7 +175,7 @@ fn is_leap(year: i32) -> bool {
     }
 }
 
-fn month_height(date: DateTime<Local>) -> u16 {
+fn month_height(date: Date<Local>) -> u16 {
     if date.month() == 1 {
         return 8;
     }
