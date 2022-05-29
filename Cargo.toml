@@ -7,6 +7,5 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4"
-colored = "2.0"
 clap = { version = "3.1.18", features = ["derive"] }
 crossterm = "0.23.2"

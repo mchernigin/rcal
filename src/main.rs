@@ -1,9 +1,8 @@
 use std;
-use std::io::{stdout};
+use std::io::stdout;
 use clap::Parser;
 use chrono::{self, Datelike, DateTime, Local};
-use colored::Colorize;
-use crossterm::{cursor, execute};
+use crossterm::{cursor, execute, style::Attribute};
 
 /// Simple calendar
 #[derive(Parser, Debug)]
@@ -135,7 +134,7 @@ fn print_month(date: DateTime<Local>, now: DateTime<Local>, cfg: &Args, x: u16) 
         let cell = format!("{day:>2}");
 
         if date.with_day(day).unwrap() == now {
-            print!("{}", cell.reversed());
+            print!("{}{}{}", Attribute::Reverse, cell, Attribute::Reset);
         } else {
             print!("{}", cell);
         }
