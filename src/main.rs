@@ -7,23 +7,23 @@ use crossterm::{cursor, execute, style::Attribute};
 #[derive(Parser, Debug)]
 struct Args {
   /// Show weeks numbers
-  #[clap(short, long)]
+  #[clap(short, long, display_order = 1)]
   week_number: bool,
 
   /// Also show previous and next months
-  #[clap(short = '3')]
+  #[clap(short = '3', display_order = 2)]
   three_months: bool,
 
   /// Show full year
-  #[clap(short, long)]
+  #[clap(short, long, display_order = 3)]
   full_year: bool,
 
-  /// Show specific month of current year
-  #[clap(short, long)]
+  /// Show specific month
+  #[clap(short, long, display_order = 4)]
   month: Option<u32>,
 
   /// Show specific year
-  #[clap(short, long)]
+  #[clap(short, long, display_order = 5)]
   year: Option<i32>,
 }
 
@@ -55,7 +55,7 @@ fn main() {
     None => (),
   }
 
-  let month_width = if args.week_number { 26 } else { 22 };
+  let month_width = if args.week_number { 25 } else { 22 };
   if args.full_year || (args.year.is_some() && args.month.is_none()) {
     print_full_year(date, now, &args, month_width);
   } else if args.three_months {
@@ -108,7 +108,7 @@ fn print_3months(cur_month: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
 }
 
 fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
-  let week_col_size = if cfg.week_number { 4 } else { 0 };
+  let week_col_size = if cfg.week_number { 3 } else { 0 };
   let months = [
     "January",
     "February",
@@ -128,7 +128,8 @@ fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
   let month_and_year = format!("{} {}", cur_month, cur_year);
   execute!(stdout(), cursor::MoveRight(x)).unwrap();
   print!("{:<1$}", "", week_col_size);
-  println!("{:^20}", month_and_year);
+  println!("{}{:^20}{}", Attribute::Underlined, month_and_year,
+                         Attribute::Reset);
   execute!(stdout(), cursor::MoveRight(x)).unwrap();
 
   print!("{:<1$}", "", week_col_size);
@@ -142,7 +143,8 @@ fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
   let days_in_month = days_in_month0(date.month0(), date.year());
   let mut week_number = date.with_day(1).unwrap().iso_week().week();
   if cfg.week_number {
-    print!("{week_number:>2}{:<1$}", "", week_col_size - 2);
+    print!("{}{week_number:>2}{}", Attribute::Dim, Attribute::Reset);
+    print!("{:<1$}", "", week_col_size - 2);
   }
   print!("{:<1$}", "", (shift * 3) as usize);
   for day in 1..(days_in_month + 1) {
@@ -160,7 +162,8 @@ fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
       execute!(stdout(), cursor::MoveRight(x)).unwrap();
       if cfg.week_number {
         week_number = date.with_day(day + 1).unwrap().iso_week().week();
-        print!("{week_number:>2}{:<1$}", "", week_col_size - 2);
+        print!("{}{week_number:>2}{}", Attribute::Dim, Attribute::Reset);
+        print!("{:<1$}", "", week_col_size - 2)
       }
     } else {
       print!(" ");
