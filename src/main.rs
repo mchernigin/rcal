@@ -55,10 +55,6 @@ fn main() {
     None => (),
   }
 
-  for m in 1..13 {
-    println!("{}", month_height(date.with_month(m).unwrap()));
-  }
-
   let month_width = if args.week_number { 26 } else { 22 };
   if args.full_year || (args.year.is_some() && args.month.is_none()) {
     print_full_year(date, now, &args, month_width);
