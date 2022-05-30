@@ -6,24 +6,28 @@ use crossterm::{cursor, execute, style::Attribute};
 /// Simple calendar
 #[derive(Parser, Debug)]
 struct Args {
+  /// Don't highlight today
+  #[clap(short = 't', long, display_order = 1)]
+  hide_today: bool,
+
   /// Show weeks numbers
-  #[clap(short, long, display_order = 1)]
+  #[clap(short, long, display_order = 2)]
   week_number: bool,
 
   /// Also show previous and next months
-  #[clap(short = '3', display_order = 2)]
+  #[clap(short = '3', display_order = 3)]
   three_months: bool,
 
   /// Show full year
-  #[clap(short, long, display_order = 3)]
+  #[clap(short, long, display_order = 4)]
   full_year: bool,
 
   /// Show specific month
-  #[clap(short, long, display_order = 4)]
+  #[clap(short, long, display_order = 5)]
   month: Option<u32>,
 
   /// Show specific year
-  #[clap(short, long, display_order = 5)]
+  #[clap(short, long, display_order = 6)]
   year: Option<i32>,
 }
 
@@ -162,7 +166,7 @@ fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16,
     let i =  (day + shift) % 7;
     let cell = format!("{day:>2}");
 
-    if date.with_day(day).unwrap() == now {
+    if !cfg.hide_today && date.with_day(day).unwrap() == now {
       print!("{}{}{}", Attribute::Reverse, cell, Attribute::Reset);
     } else {
       print!("{}", cell);
