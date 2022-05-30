@@ -30,7 +30,6 @@ struct Args {
 fn main() {
   let now = chrono::Local::now().date();
   let mut date = now.with_day(1).unwrap();
-  let month_width = 22;
 
   let args = Args::parse();
   match args.month {
@@ -56,6 +55,7 @@ fn main() {
     None => (),
   }
   
+  let month_width = if args.week_number { 26 } else { 22 };
   if args.full_year || (args.year.is_some() && args.month.is_none()) {
     print_full_year(date, now, &args, month_width);
   } else if args.three_months {
@@ -155,13 +155,11 @@ fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
       print!("{}", cell);
     }
 
-    if i % 7 == 0 {
-      if day != days_in_month {
-        println!();
-      }
+    if i % 7 == 0 && day != days_in_month {
+      println!();
       execute!(stdout(), cursor::MoveRight(x)).unwrap();
-      week_number = (week_number + 1) % 52;
       if cfg.week_number {
+        week_number = date.with_day(day + 1).unwrap().iso_week().week();
         print!("{week_number:>2}{:<1$}", "", week_col_size - 2);
       }
     } else {
