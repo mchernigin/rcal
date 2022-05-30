@@ -59,22 +59,28 @@ fn main() {
   if args.full_year || (args.year.is_some() && args.month.is_none()) {
     print_full_year(date, now, &args, month_width);
   } else if args.three_months {
-    print_3months(date, now, &args, month_width);
+    print_3months(date, now, &args, month_width, true);
   } else {
-    print_month(date, now, &args, 0);
+    print_month(date, now, &args, 0, true);
   }
 }
 
 fn print_full_year(date: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
+  if cfg.week_number {
+    println!("{}{:^73}{}", Attribute::Bold, date.year(), Attribute::Reset);
+  } else {
+    println!("{}{:^64}{}", Attribute::Bold, date.year(), Attribute::Reset);
+  }
   for i in (2..12).step_by(3) {
-    print_3months(date.with_month(i).unwrap(), now, &cfg, w);
+    print_3months(date.with_month(i).unwrap(), now, &cfg, w, false);
     if i != 11 {
       println!();
     }
   }
 }
 
-fn print_3months(cur_month: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
+fn print_3months(cur_month: Date<Local>, now: Date<Local>, cfg: &Args, w: u16,
+                 show_year: bool) {
   let m = cur_month.month();
 
   let prev_month = if m == 1 {
@@ -92,7 +98,7 @@ fn print_3months(cur_month: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
 
   let mut shift = 0;
   for month in [prev_month, cur_month, next_month] {
-    print_month(month, now, &cfg, shift);
+    print_month(month, now, &cfg, shift, show_year);
     if month != next_month {
       execute!(stdout(), cursor::MoveUp(month_height(month))).unwrap();
       shift += w;
@@ -107,7 +113,8 @@ fn print_3months(cur_month: Date<Local>, now: Date<Local>, cfg: &Args, w: u16) {
   execute!(stdout(), cursor::MoveDown(dy)).unwrap();
 }
 
-fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
+fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16,
+               show_year: bool) {
   let week_col_size = if cfg.week_number { 3 } else { 0 };
   let months = [
     "January",
@@ -123,13 +130,17 @@ fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
     "November",
     "December",
   ];
-  let cur_month = months[date.month0() as usize];
+  let cur_month = months[date.month0() as usize].to_string();
   let cur_year = date.year();
-  let month_and_year = format!("{} {}", cur_month, cur_year);
   execute!(stdout(), cursor::MoveRight(x)).unwrap();
   print!("{:<1$}", "", week_col_size);
-  println!("{}{:^20}{}", Attribute::Underlined, month_and_year,
-                         Attribute::Reset);
+  if show_year {
+    let month_and_year = format!("{} {}", cur_month, cur_year);
+    println!("{}{:^20}{}", Attribute::Underlined, month_and_year,
+                           Attribute::Reset);
+  } else {
+    println!("{}{:^20}{}", Attribute::Underlined, cur_month, Attribute::Reset);
+  }
   execute!(stdout(), cursor::MoveRight(x)).unwrap();
 
   print!("{:<1$}", "", week_col_size);
