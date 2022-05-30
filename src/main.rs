@@ -54,7 +54,11 @@ fn main() {
       },
     None => (),
   }
-  
+
+  for m in 1..13 {
+    println!("{}", month_height(date.with_month(m).unwrap()));
+  }
+
   let month_width = if args.week_number { 26 } else { 22 };
   if args.full_year || (args.year.is_some() && args.month.is_none()) {
     print_full_year(date, now, &args, month_width);
@@ -139,7 +143,7 @@ fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
   execute!(stdout(), cursor::MoveRight(x)).unwrap();
 
   let shift = date.with_day(1).unwrap().weekday() as u32;
-  let days_in_month = days_in_month(date.month0(), date.year());
+  let days_in_month = days_in_month0(date.month0(), date.year());
   let mut week_number = date.with_day(1).unwrap().iso_week().week();
   if cfg.week_number {
     print!("{week_number:>2}{:<1$}", "", week_col_size - 2);
@@ -169,7 +173,7 @@ fn print_month(date: Date<Local>, now: Date<Local>, cfg: &Args, x: u16) {
   println!()
 }
 
-fn days_in_month(month: u32, year: i32) -> u32 {
+fn days_in_month0(month: u32, year: i32) -> u32 {
   match month {
     1 => if is_leap(year) { 29 } else { 28 },
     3 | 5 | 8 | 10 => 30,
@@ -190,13 +194,19 @@ fn is_leap(year: i32) -> bool {
 }
 
 fn month_height(date: Date<Local>) -> u16 {
-  if date.month() == 1 {
-    return 8;
+  let head = 2;
+  let days = days_in_month0(date.month0(), date.year());
+  let first_day = date.with_day(1).unwrap().weekday() as u8;
+  
+  if (days == 31 && first_day > 4) ||
+     (days == 30 && first_day > 5) {
+    head + 6
+  } else if (days == 31 && first_day <= 4) ||
+            (days == 30 && first_day <= 5) ||
+            (days == 29) ||
+            (days == 28 && first_day > 0) {
+    head + 5
+  } else {
+    head + 4
   }
-
-  let last_day = days_in_month(date.month0(), date.year());
-  let max_week = date.with_day(last_day).unwrap().iso_week().week();
-  let min_week = date.with_day(1).unwrap().iso_week().week();
-  let height = 3 + (max_week - min_week);
-  height as u16
 }
